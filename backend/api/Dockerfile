@@ -1,19 +1,15 @@
-FROM node:20-alpine
+FROM node:20
 
 WORKDIR /app
 
-# Copy package files from backend/api
 COPY backend/api/package*.json ./
+COPY backend/api/prisma ./prisma/
 
 RUN npm install
-
-# Copy full backend source
-COPY backend/api/ .
-
-# Generate Prisma client
 RUN npx prisma generate
 
-# Build NestJS app
+COPY backend/api/ ./
+
 RUN npm run build
 
 EXPOSE 3000
