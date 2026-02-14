@@ -68,6 +68,31 @@ Health check endpoint. Used by Railway and similar platforms for liveness checks
 
 ---
 
+### GET /health/detailed
+
+Detailed health check with DB connectivity, uptime, and environment info. Public, no auth.
+
+**Response 200:**
+```json
+{
+  "status": "ok",
+  "database": "ok",
+  "uptimeSeconds": 3600,
+  "version": "0.0.1",
+  "environment": "production"
+}
+```
+
+| Field         | Type   | Description                                        |
+|---------------|--------|----------------------------------------------------|
+| status        | string | `"ok"` or `"degraded"` (when DB unreachable)       |
+| database      | string | `"ok"` or `"error"`                                |
+| uptimeSeconds | number | Seconds since process start                        |
+| version       | string | From `APP_VERSION` env or default `"0.0.1"`        |
+| environment   | string | `NODE_ENV` (e.g. production, development)          |
+
+---
+
 ### GET /public/track/:shipmentId
 
 Public shipment tracking. No authentication.
@@ -533,6 +558,29 @@ Disable a webhook subscription (sets `enabled: false`).
 
 ---
 
+### GET /admin/demo/summary
+
+Demo dashboard summary. **Roles:** ADMIN only.
+
+**Response 200:**
+```json
+{
+  "totalShipments": 42,
+  "activeShipments": 11,
+  "deliveredShipments": 31,
+  "totalRevenue": 31
+}
+```
+
+| Field              | Type   | Description                          |
+|--------------------|--------|--------------------------------------|
+| totalShipments     | number | Total shipment count                 |
+| activeShipments    | number | Shipments not yet delivered          |
+| deliveredShipments | number | Shipments with status DELIVERED      |
+| totalRevenue       | number | Count of released payments           |
+
+---
+
 ### GET /admin/metrics/technical
 
 Operational metrics (counters, gauges, histogram). In-process, no external SaaS.
@@ -624,6 +672,19 @@ Note: `deliveryLatitude` and `deliveryLongitude` are optional; when provided, ET
 // Response 200
 { "id": "clx111", "status": "PENDING", "shipperId": "clx123", "driverId": null, ... }
 ```
+
+---
+
+## Seed Command (CLI)
+
+Populate demo data for testing:
+
+```bash
+cd backend/api
+npm run seed
+```
+
+Idempotent: creates 1 SHIPPER, 1 FLEET_OWNER, 1 DRIVER, 2 vehicles, 2 shipments (1 delivered with PICKUP/DELIVERY events) only if they don't exist. Safe to run in production.
 
 ---
 

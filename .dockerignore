@@ -1,0 +1,12 @@
+# Exclude from Docker build context
+.git
+.gitignore
+*.md
+docs
+frontend
+docker-compose.yml
+*.db
+*.db-journal
+node_modules
+.env
+.env.*

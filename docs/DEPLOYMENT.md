@@ -33,15 +33,16 @@
 ### Option A: Railway
 
 1. Create account at [railway.app](https://railway.app)
-2. New Project → Deploy from GitHub repo (or add Dockerfile)
+2. New Project → Deploy from GitHub repo
 3. Add **PostgreSQL** from Railway template
 4. Select backend service → **Variables**:
    - `DATABASE_URL` – auto from PostgreSQL add-on (or `${{Postgres.DATABASE_URL}}`)
    - `JWT_SECRET` – generate: `openssl rand -base64 32`
    - `PORT` – usually set automatically
-5. **Settings** → Root Directory: `backend/api` (if monorepo)
-6. **Deploy** – Railway uses Dockerfile or Nixpacks
-7. Copy the generated URL (e.g. `https://trackas-api-production.up.railway.app`)
+5. **Deploy** – Uses root `Dockerfile` and `railway.toml` (Docker builder forced)
+6. Copy the generated URL (e.g. `https://trackas-api-production.up.railway.app`)
+
+**Note:** `railway.toml` forces Docker; no Root Directory change needed.
 
 ### Option B: Render
 
@@ -76,6 +77,22 @@ For platform builds without Docker:
 ```bash
 npx prisma migrate deploy
 ```
+
+---
+
+## 2a. Seed Demo Data
+
+To populate demo users, vehicles, and shipments for testing:
+
+```bash
+cd backend/api
+npm run seed
+```
+
+Creates (idempotent – safe to re-run):
+- 1 SHIPPER, 1 FLEET_OWNER, 1 DRIVER
+- 2 Vehicles
+- 2 Shipments (1 delivered with tracking events)
 
 ---
 
