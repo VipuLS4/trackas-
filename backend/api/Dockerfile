@@ -1,26 +1,20 @@
-FROM node:20-alpine AS builder
+FROM node:20-alpine
 
 WORKDIR /app
 
-COPY package*.json ./
-COPY prisma ./prisma/
-RUN npm ci
+# Copy package files from backend/api
+COPY backend/api/package*.json ./
+
+RUN npm install
+
+# Copy full backend source
+COPY backend/api/ .
+
+# Generate Prisma client
 RUN npx prisma generate
 
-COPY . .
+# Build NestJS app
 RUN npm run build
-
-FROM node:20-alpine AS runner
-
-WORKDIR /app
-
-ENV NODE_ENV=production
-ENV PORT=3000
-
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/package*.json ./
-COPY --from=builder /app/prisma ./prisma/
 
 EXPOSE 3000
 
