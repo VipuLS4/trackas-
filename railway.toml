@@ -1,0 +1,4 @@
+# Force Railway to use Docker instead of Railpack
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "backend/api/Dockerfile"
