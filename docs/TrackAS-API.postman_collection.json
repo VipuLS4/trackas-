@@ -1,0 +1,240 @@
+{
+  "info": {
+    "name": "TrackAS API",
+    "description": "API collection for TrackAS backend. Set `baseUrl` and `token` in collection variables.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000" },
+    { "key": "token", "value": "" },
+    { "key": "shipmentId", "value": "" },
+    { "key": "vehicleId", "value": "" },
+    { "key": "driverId", "value": "" },
+    { "key": "assignmentId", "value": "" }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+  },
+  "item": [
+    {
+      "name": "Public",
+      "item": [
+        {
+          "name": "Root (Health)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": "{{baseUrl}}/",
+            "description": "Public health endpoint. No auth."
+          }
+        },
+        {
+          "name": "Public Tracking",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": "{{baseUrl}}/public/track/{{shipmentId}}",
+            "description": "Public shipment tracking. No auth. Replace shipmentId."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Vehicles",
+      "item": [
+        {
+          "name": "Create Vehicle",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/vehicles",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"plateNumber\": \"AB 123 CD\",\n  \"make\": \"Toyota\",\n  \"model\": \"Hiace\"\n}"
+            },
+            "description": "Roles: FLEET_OWNER, INDIVIDUAL_OWNER"
+          }
+        },
+        {
+          "name": "List Vehicles",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/vehicles",
+            "description": "ADMIN: all. FLEET_OWNER/INDIVIDUAL_OWNER: own vehicles."
+          }
+        },
+        {
+          "name": "Assign Driver",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/vehicles/{{vehicleId}}/assign-driver",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"driverId\": \"{{driverId}}\"\n}"
+            },
+            "description": "Role: ADMIN"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tracking",
+      "item": [
+        {
+          "name": "Record Pickup",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/tracking",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"shipmentId\": \"{{shipmentId}}\",\n  \"eventType\": \"PICKUP\",\n  \"latitude\": 52.52,\n  \"longitude\": 13.405\n}"
+            },
+            "description": "Roles: DRIVER, ADMIN. Sets shipment.status = PICKUP_CONFIRMED"
+          }
+        },
+        {
+          "name": "Record Delivery",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/tracking",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"shipmentId\": \"{{shipmentId}}\",\n  \"eventType\": \"DELIVERY\",\n  \"latitude\": 52.53,\n  \"longitude\": 13.41\n}"
+            },
+            "description": "Roles: DRIVER, ADMIN. Sets shipment.status = DELIVERED, releases payment"
+          }
+        },
+        {
+          "name": "Get Tracking by Shipment",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/tracking/shipment/{{shipmentId}}",
+            "description": "ADMIN, SHIPPER (owner), DRIVER (assigned)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Webhooks",
+      "item": [
+        {
+          "name": "Create Webhook",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/webhooks",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"url\": \"https://your-server.com/webhooks/trackas\",\n  \"secret\": \"your-min-16-char-secret\"\n}"
+            },
+            "description": "Role: SHIPPER"
+          }
+        },
+        {
+          "name": "List Webhooks",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/webhooks",
+            "description": "Role: SHIPPER"
+          }
+        },
+        {
+          "name": "Disable Webhook",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/webhooks/{{webhookId}}",
+            "description": "Role: SHIPPER"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Shipments",
+      "item": [
+        {
+          "name": "List Shipments",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/shipments",
+            "description": "Role: SHIPPER. Returns shipments where shipperId = current user."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Assignments",
+      "item": [
+        {
+          "name": "My Assignments",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/assignments/my",
+            "description": "Role: DRIVER. Returns open assignments for current driver."
+          }
+        },
+        {
+          "name": "Accept Assignment",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/assignments/{{assignmentId}}/accept",
+            "description": "DRIVER (assigned to vehicle) or FLEET_OWNER (owns vehicle). Assignment must not be expired."
+          }
+        },
+        {
+          "name": "Reject Assignment",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/assignments/{{assignmentId}}/reject",
+            "description": "Same roles as accept. Triggers auto re-assignment."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Payments",
+      "item": [
+        {
+          "name": "Get Payment by Shipment",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/payments/shipment/{{shipmentId}}",
+            "description": "ADMIN, SHIPPER (owner), DRIVER (assigned)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin Metrics",
+      "item": [
+        {
+          "name": "Overview",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/admin/metrics/overview",
+            "description": "Role: ADMIN"
+          }
+        },
+        {
+          "name": "Technical",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/admin/metrics/technical",
+            "description": "Role: ADMIN. Operational metrics (counters, gauges, histogram)."
+          }
+        },
+        {
+          "name": "Funnel",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/admin/metrics/funnel",
+            "description": "Role: ADMIN"
+          }
+        }
+      ]
+    }
+  ]
+}

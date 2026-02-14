@@ -1,0 +1,99 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                  String               @id @default(cuid())
+  email               String               @unique
+  role                String               // ADMIN | SHIPPER | DRIVER | FLEET_OWNER | INDIVIDUAL_OWNER
+  shipments           Shipment[]           @relation("Shipper")
+  assignedRuns        Shipment[]           @relation("Driver")
+  trackingEvents      TrackingEvent[]
+  ownedVehicles       Vehicle[]            @relation("VehicleOwner")
+  assignedVehicle     Vehicle?             @relation("AssignedDriver")
+  webhookSubscriptions WebhookSubscription[]
+}
+
+model WebhookSubscription {
+  id        String   @id @default(cuid())
+  shipperId String
+  url       String
+  secret    String
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now())
+  shipper   User     @relation(fields: [shipperId], references: [id], onDelete: Cascade)
+  deliveries WebhookDelivery[]
+}
+
+model WebhookDelivery {
+  id             String              @id @default(cuid())
+  subscriptionId String
+  eventType      String
+  payload        String              // JSON
+  status         String              @default("pending") // pending | success | failed
+  attempts       Int                 @default(0)
+  lastError      String?
+  createdAt      DateTime            @default(now())
+  subscription   WebhookSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+}
+
+model Vehicle {
+  id          String       @id @default(cuid())
+  ownerId     String
+  driverId    String?      @unique // one driver per vehicle (one-to-one with User.assignedVehicle)
+  plateNumber String
+  make        String?
+  model       String?
+  owner       User         @relation("VehicleOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  driver      User?        @relation("AssignedDriver", fields: [driverId], references: [id], onDelete: SetNull)
+  assignments Assignment[]
+}
+
+model Shipment {
+  id               String          @id @default(cuid())
+  status           String          @default("PENDING") // PENDING | ASSIGNMENT_PENDING | PICKUP_CONFIRMED | IN_TRANSIT | DELIVERED
+  shipperId        String
+  driverId         String?
+  deliveryLatitude Float?
+  deliveryLongitude Float?
+  shipper         User            @relation("Shipper", fields: [shipperId], references: [id])
+  driver          User?           @relation("Driver", fields: [driverId], references: [id])
+  trackingEvents  TrackingEvent[]
+  payment         Payment?
+  assignments     Assignment[]
+}
+
+model Assignment {
+  id         String    @id @default(cuid())
+  shipmentId String
+  vehicleId  String
+  expiresAt  DateTime
+  acceptedAt DateTime?
+  rejectedAt DateTime?
+  shipment   Shipment  @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  vehicle    Vehicle   @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+}
+
+model Payment {
+  id         String   @id @default(cuid())
+  shipmentId String   @unique // one payment per shipment
+  status     String   @default("HELD") // HELD | RELEASED
+  shipment   Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+}
+
+model TrackingEvent {
+  id          String    @id @default(cuid())
+  shipmentId  String
+  eventType   String    // PICKUP | DELIVERY
+  latitude    Float
+  longitude   Float
+  createdAt   DateTime  @default(now())
+  createdById String?
+  shipment    Shipment  @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  createdBy   User?     @relation(fields: [createdById], references: [id])
+}
